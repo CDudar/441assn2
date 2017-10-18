@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.io.*;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 
@@ -28,7 +29,7 @@ public class WebServer extends Thread {
 	public WebServer(int port) {
 		
 		try{
-			serverSocket = new ServerSocket(port);
+			serverSocket = new ServerSocket(port, 0, InetAddress.getByName(null));
 			pool = Executors.newFixedThreadPool(4);
 		}
 		catch(IOException e){
@@ -87,6 +88,11 @@ public class WebServer extends Thread {
 		     Thread.currentThread().interrupt();
 		   }
 		   
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 			
 
@@ -132,6 +138,8 @@ public class WebServer extends Thread {
 		System.out.println();
 		System.out.println("shutting down the server...");
 		server.shutdown();
+		keyboard.close();
+		
 		System.out.println("server stopped");
 	}
 	
