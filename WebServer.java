@@ -6,11 +6,18 @@ package assignment2;
  */
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.io.*;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
 
 
 public class WebServer extends Thread {
 
+	ServerSocket serverSocket;
+	private volatile boolean shutDown = false;
+	private ExecutorService pool = null;
     /**
      * Default constructor to initialize the web server
      * 
@@ -18,6 +25,14 @@ public class WebServer extends Thread {
      * 
      */
 	public WebServer(int port) {
+		
+		try{
+			serverSocket = new ServerSocket(port);
+			pool = Executors.newFixedThreadPool(4);
+		}
+		catch(IOException e){
+			System.out.println("Error " + e.getMessage());
+		}
 		
 	}
 
@@ -29,6 +44,34 @@ public class WebServer extends Thread {
 	 * 
      */
 	public void run() {
+		
+		try {
+			serverSocket.setSoTimeout(1000);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+			while(!shutDown){
+				
+				try{
+					pool.execute(new ServerResponseThread (serverSocket.accept()));
+					
+				}
+				
+				catch(SocketTimeoutException e){
+					System.out.println("checked shutdown");
+					if(shutDown)
+						break;
+					
+				} catch (IOException e) {
+					System.out.println("Error " + e.getMessage());
+				}
+				
+				
+				
+				
+			}
+		
 	}
 
 	
