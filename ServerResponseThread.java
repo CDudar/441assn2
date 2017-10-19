@@ -2,8 +2,12 @@ package assignment2;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -35,6 +39,7 @@ public class ServerResponseThread implements Runnable {
 		Scanner scan = new Scanner(get_request_string);
 		line = scan.nextLine();
 		String[] args = line.split(" ");
+		
 		
 		String requestedObject = args[1].substring(1);
 		System.out.println(requestedObject);
@@ -68,9 +73,10 @@ public class ServerResponseThread implements Runnable {
 
 		
 		File requestedObjectFile = new File(requestedObject);
+		byte[] fileBytes = new byte[1024];
 		
 		try {
-			byte[] fileBytes = getFileByteList(requestedObjectFile);
+			fileBytes = getFileByteList(requestedObjectFile);
 			
 		} catch (FileNotFoundException e) {
 			System.out.println("File does not exist");
@@ -80,11 +86,33 @@ public class ServerResponseThread implements Runnable {
 			System.out.println("Error " + e.getMessage());
 		}
 		
+		System.out.println(fileBytes.length);
+		System.out.println("setting up outStream");
+
+		//need to write byte[] to outputstream
+		try {
+			OutputStream outputStream = new BufferedOutputStream(socket.getOutputStream(), 2048);
+			System.out.println("writing to outStream");
+			
+			
+			int offset = 0;
+			
+			while(offset + 2048 <= fileBytes.length){
+				outputStream.write(fileBytes, offset, 2048);
+				outputStream .flush();
+				offset += 2048;
+			}
+			
+			outputStream.write(fileBytes, offset, fileBytes.length - offset);
+			
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+
 		
-		
-		
-		
-		
+		scan.close();
 		
 		
 		
@@ -100,8 +128,20 @@ public class ServerResponseThread implements Runnable {
 		long length = f.length();
 		byte[] fileByteList = new byte[(int) length];
 		
+		int bytesRead = 0;
+		int totalBytesRead= 0;
+		
+
+		while( (totalBytesRead < fileByteList.length) && (bytesRead = fileInputStream.read(fileByteList, totalBytesRead, fileByteList.length - totalBytesRead)) >= 0){
+			totalBytesRead += bytesRead;
+			}
 		
 		
+		fileInputStream.close();
+		
+		if(totalBytesRead < fileByteList.length){
+			throw new IOException("Could not completely read file " + f.getName());
+		}
 		
 		return fileByteList;
 	}
