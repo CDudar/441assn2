@@ -87,6 +87,9 @@ public class ServerResponseThread implements Runnable {
 		}
 		
 		System.out.println(fileBytes.length);
+		
+		
+		
 		System.out.println("setting up outStream");
 
 		//need to write byte[] to outputstream
@@ -142,6 +145,9 @@ public class ServerResponseThread implements Runnable {
 		if(totalBytesRead < fileByteList.length){
 			throw new IOException("Could not completely read file " + f.getName());
 		}
+		
+		System.out.println("total bytes read in" + totalBytesRead);
+		
 		
 		return fileByteList;
 	}
