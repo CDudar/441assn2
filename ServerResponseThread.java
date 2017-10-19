@@ -16,6 +16,7 @@ public class ServerResponseThread implements Runnable {
 
 	private final Socket socket;
 
+	private PrintWriter stringOutputStream;
 	
 	public ServerResponseThread(Socket socket){
 		this.socket = socket;
@@ -29,6 +30,15 @@ public class ServerResponseThread implements Runnable {
 		String line;
 		boolean badRequest = false;
 		boolean fileExists = true;
+		try {
+			stringOutputStream = new PrintWriter(new DataOutputStream(
+					socket.getOutputStream()));
+		} catch (IOException e1) {
+			System.out.println("Problem setting up String output stream");
+			System.out.println("Error " + e1.getMessage());
+		}
+		
+		
 		
 		String get_request_string = receiveInputStream(socket);
 		
@@ -70,50 +80,79 @@ public class ServerResponseThread implements Runnable {
 			}
 			
 		}
+		
+	
+		
 
 		
-		File requestedObjectFile = new File(requestedObject);
-		byte[] fileBytes = new byte[1024];
-		
-		try {
-			fileBytes = getFileByteList(requestedObjectFile);
+		if(badRequest) {
+			//400 Bad Request
 			
-		} catch (FileNotFoundException e) {
-			System.out.println("File does not exist");
-			fileExists = false;
-
-		} catch (IOException e) {
-			System.out.println("Error " + e.getMessage());
+			
 		}
 		
-		System.out.println(fileBytes.length);
-		
-		
-		
-		System.out.println("setting up outStream");
+		else {
+			
+			File requestedObjectFile = new File(requestedObject);
+			byte[] fileBytes = new byte[1024];
+			
+			try {
+				fileBytes = getFileByteList(requestedObjectFile);
+				
+			} catch (FileNotFoundException e) {
+				System.out.println("File does not exist");
+				fileExists = false;
 
-		//need to write byte[] to outputstream
-		try {
-			OutputStream outputStream = new BufferedOutputStream(socket.getOutputStream(), 2048);
-			System.out.println("writing to outStream");
-			
-			
-			int offset = 0;
-			
-			while(offset + 2048 <= fileBytes.length){
-				outputStream.write(fileBytes, offset, 2048);
-				outputStream .flush();
-				offset += 2048;
+			} catch (IOException e) {
+				System.out.println("Error " + e.getMessage());
 			}
 			
-			outputStream.write(fileBytes, offset, fileBytes.length - offset);
+			System.out.println(fileBytes.length);
 			
 			
-		} catch (IOException e) {
-			e.printStackTrace();
+			
+			
+			if(!fileExists) {
+				//404 Not Found
+				
+				
+				
+				
+			}
+			
+			else {
+				
+				//200 OK
+				
+				System.out.println("setting up outStream");
+
+				//need to write byte[] to outputstream
+				try {
+					OutputStream outputStream = new BufferedOutputStream(socket.getOutputStream(), 2048);
+					System.out.println("writing to outStream");
+					
+					
+					int offset = 0;
+					
+					while(offset + 2048 <= fileBytes.length){
+						outputStream.write(fileBytes, offset, 2048);
+						outputStream .flush();
+						offset += 2048;
+					}
+					
+					outputStream.write(fileBytes, offset, fileBytes.length - offset);
+					
+					
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+				
+				
+				
+			}
+			
 		}
-
-
 		
 		scan.close();
 		
