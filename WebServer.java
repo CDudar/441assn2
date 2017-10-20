@@ -61,8 +61,6 @@ public class WebServer extends Thread {
 				}
 				
 				catch(SocketTimeoutException e){
-					//System.out.println("checked shutdown");
-					
 					if(shutDown)
 						break;
 					
@@ -72,6 +70,10 @@ public class WebServer extends Thread {
 				
 				
 			}
+			
+			
+		//FOLLOWING SHUTDOWN CODE BLOCK FROM JAVADOC
+		//https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html
 			
 		   pool.shutdown(); // Disable new tasks from being submitted
 		   try {
