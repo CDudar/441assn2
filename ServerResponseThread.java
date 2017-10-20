@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.util.Date;
@@ -108,6 +109,8 @@ public class ServerResponseThread implements Runnable {
 		else {
 			
 			requestedObjectFile = new File(requestedObject);
+			System.out.println("Requested object: ");
+			//System.out.println(System.+"/"+requestedObject);
 			
 			try {
 			fileInputStream = new FileInputStream(requestedObjectFile);
@@ -140,17 +143,31 @@ public class ServerResponseThread implements Runnable {
 			else {
 				
 				//200 OK
-				
-				stringOutputStream.write("HTTP/1.0 200 OK\r\n"
+				String httpHeader = "HTTP/1.0 200 OK\r\n"
 						+ getDate() + "Server: Christian/441\r\n" +
 						getLastModified() + getContentLength() + getContentType()
 						+ "Connection: close"
-						+ "\r\n\r\n");
-				stringOutputStream.flush();
+						+ "\r\n\r\n";
+				
+				byte[] httpHeaderBytes = null;
+				
+				try {
+					httpHeaderBytes = httpHeader.getBytes("US-ASCII");
+				} catch (UnsupportedEncodingException e1) {
+					e1.printStackTrace();
+				}
+				
+				try {
+					socket.getOutputStream().write(httpHeaderBytes);
+					socket.getOutputStream().flush();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				
 				
 				System.out.println("setting up outStream");
 
-				byte[] buffer = new byte[1024];
+				//byte[] buffer = new byte[1024];
 				long contentLength = requestedObjectFile.length();
 				int counter = 0;
 				
@@ -158,15 +175,12 @@ public class ServerResponseThread implements Runnable {
 				try {
 					
 					
-					while(counter < contentLength) {
+					byte[] buffer = new byte[(int) contentLength];
 					
-						System.out.println("writing to outStream");
-						counter += fileInputStream.read(buffer);
-						byteOutputStream.write(buffer);
-						//byteOutputStream.flush();
-						System.out.println(counter);
-					}
-					
+					fileInputStream.read(buffer);
+					socket.getOutputStream().write(buffer);
+					socket.getOutputStream().flush();
+
 					fileInputStream.close();
 					
 				} catch (IOException e) {

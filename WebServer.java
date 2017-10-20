@@ -62,6 +62,7 @@ public class WebServer extends Thread {
 				
 				catch(SocketTimeoutException e){
 					//System.out.println("checked shutdown");
+					
 					if(shutDown)
 						break;
 					
@@ -111,7 +112,7 @@ public class WebServer extends Thread {
 	 * A simple driver.
 	 */
 	public static void main(String[] args) {
-		int serverPort = 2225;
+		int serverPort = 2226;
 
 		// parse command line args
 		if (args.length == 1) {
