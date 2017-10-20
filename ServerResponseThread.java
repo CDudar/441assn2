@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.util.Scanner;
@@ -17,7 +18,8 @@ import java.io.FileNotFoundException;
 public class ServerResponseThread implements Runnable {
 
 	private final Socket socket;
-
+	
+	private File requestedObjectFile;
 	private PrintWriter stringOutputStream;
 	
 	public ServerResponseThread(Socket socket){
@@ -73,8 +75,8 @@ public class ServerResponseThread implements Runnable {
 			
 			String[] fieldArgs = line.split(":");
 			
-			if(fieldArgs.length > 2)
-				badRequest = true;
+			//if(fieldArgs.length > 2)
+				//badRequest = true;
 			
 			
 			if(badRequest){
@@ -98,7 +100,7 @@ public class ServerResponseThread implements Runnable {
 		
 		else {
 			
-			File requestedObjectFile = new File(requestedObject);
+			requestedObjectFile = new File(requestedObject);
 			byte[] fileBytes = new byte[1024];
 			
 			try {
@@ -133,6 +135,12 @@ public class ServerResponseThread implements Runnable {
 				
 				//200 OK
 				
+				stringOutputStream.print("HTTP/1.0 200 OK\r\n"
+						+ getDate() + "Server: Christian/441\r\n" +
+						getLastModified() + getContentLength() + getContentType()
+						+ "Connection: close\r\n\r\n");
+				stringOutputStream.flush();
+				
 				System.out.println("setting up outStream");
 
 				//need to write byte[] to outputstream
@@ -145,12 +153,16 @@ public class ServerResponseThread implements Runnable {
 					
 					while(offset + 2048 <= fileBytes.length){
 						outputStream.write(fileBytes, offset, 2048);
-						outputStream .flush();
 						offset += 2048;
 					}
+					System.out.println("offset before and after last write");
+					System.out.println(offset);
 					
 					outputStream.write(fileBytes, offset, fileBytes.length - offset);
+					outputStream.flush();
 					
+					offset += fileBytes.length - offset;
+					System.out.println(offset);
 					
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -250,6 +262,27 @@ public class ServerResponseThread implements Runnable {
 		}
 		
 		return get_request_string;
+		
+	}
+	
+	public String getLastModified() {
+		SimpleDateFormat dateFormatter=new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss zzz");
+		return "Last-Modified: " + dateFormatter.format(requestedObjectFile.lastModified()) + "\r\n";
+	}
+	
+	public String getContentLength() {
+		return("Content-Length: " + requestedObjectFile.length()) + "\r\n";
+		
+	}
+	
+	public String getContentType(){
+		try {
+			return "Content-Type: "
+					+ Files.probeContentType(requestedObjectFile.toPath())
+					+ "\r\n";
+		} catch (IOException e) {
+			return "Content-Type: \r\n";
+		}
 		
 	}
 	
