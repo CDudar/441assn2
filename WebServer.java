@@ -57,9 +57,11 @@ public class WebServer extends Thread {
 				
 				try{
 					pool.execute(new ServerResponseThread (serverSocket.accept()));
+					
 				}
 				
 				catch(SocketTimeoutException e){
+					System.out.println("checked shutdown");
 					if(shutDown)
 						break;
 					
@@ -125,6 +127,7 @@ public class WebServer extends Thread {
 		System.out.println("starting the server on port " + serverPort);
 		
 		WebServer server = new WebServer(serverPort);
+		
 		server.start();
 		System.out.println("server started. Type \"quit\" to stop");
 		System.out.println(".....................................");

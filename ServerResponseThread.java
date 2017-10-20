@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 import java.util.Scanner;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
@@ -88,7 +90,10 @@ public class ServerResponseThread implements Runnable {
 		if(badRequest) {
 			//400 Bad Request
 			
-			
+			stringOutputStream.print("HTTP/1.0 400 Bad Request\r\n"
+									+ getDate() + "Server: Christian/441\r\n"
+									+ "Connection: close\r\n\r\n");
+			stringOutputStream.flush();
 		}
 		
 		else {
@@ -104,6 +109,7 @@ public class ServerResponseThread implements Runnable {
 				fileExists = false;
 
 			} catch (IOException e) {
+				System.out.println("Error reading in fileByteList");
 				System.out.println("Error " + e.getMessage());
 			}
 			
@@ -115,7 +121,10 @@ public class ServerResponseThread implements Runnable {
 			if(!fileExists) {
 				//404 Not Found
 				
-				
+				stringOutputStream.print("HTTP/1.0 404 Not Found\r\n"
+						+ getDate() + "Server: Christian/441\r\n"
+						+ "Connection: close\r\n\r\n");
+				stringOutputStream.flush();
 				
 				
 			}
@@ -242,6 +251,11 @@ public class ServerResponseThread implements Runnable {
 		
 		return get_request_string;
 		
+	}
+	
+	public String getDate() {
+		SimpleDateFormat dateFormatter=new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss zzz");
+		return "Date: " + dateFormatter.format(new Date())+"\r\n";
 	}
 
 }
