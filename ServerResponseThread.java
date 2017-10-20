@@ -9,6 +9,9 @@ import java.nio.file.Files;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.util.Scanner;
+
+import org.omg.CORBA.SystemException;
+
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -21,6 +24,7 @@ public class ServerResponseThread implements Runnable {
 	
 	private File requestedObjectFile;
 	private PrintWriter stringOutputStream;
+	private DataOutputStream byteOutputStream;
 	
 	public ServerResponseThread(Socket socket){
 		this.socket = socket;
@@ -32,11 +36,14 @@ public class ServerResponseThread implements Runnable {
 		System.out.println("hello");
 
 		String line;
+		
+		FileInputStream fileInputStream = null;
+		
 		boolean badRequest = false;
 		boolean fileExists = true;
 		try {
-			stringOutputStream = new PrintWriter(new DataOutputStream(
-					socket.getOutputStream()));
+			byteOutputStream = new DataOutputStream(socket.getOutputStream());
+			stringOutputStream = new PrintWriter(byteOutputStream);
 		} catch (IOException e1) {
 			System.out.println("Problem setting up String output stream");
 			System.out.println("Error " + e1.getMessage());
@@ -101,10 +108,9 @@ public class ServerResponseThread implements Runnable {
 		else {
 			
 			requestedObjectFile = new File(requestedObject);
-			byte[] fileBytes = new byte[1024];
 			
 			try {
-				fileBytes = getFileByteList(requestedObjectFile);
+			fileInputStream = new FileInputStream(requestedObjectFile);
 				
 			} catch (FileNotFoundException e) {
 				System.out.println("File does not exist");
@@ -115,7 +121,7 @@ public class ServerResponseThread implements Runnable {
 				System.out.println("Error " + e.getMessage());
 			}
 			
-			System.out.println(fileBytes.length);
+
 			
 			
 			
@@ -135,34 +141,33 @@ public class ServerResponseThread implements Runnable {
 				
 				//200 OK
 				
-				stringOutputStream.print("HTTP/1.0 200 OK\r\n"
+				stringOutputStream.write("HTTP/1.0 200 OK\r\n"
 						+ getDate() + "Server: Christian/441\r\n" +
 						getLastModified() + getContentLength() + getContentType()
-						+ "Connection: close\r\n\r\n");
+						+ "Connection: close"
+						+ "\r\n\r\n");
 				stringOutputStream.flush();
 				
 				System.out.println("setting up outStream");
 
+				byte[] buffer = new byte[1024];
+				long contentLength = requestedObjectFile.length();
+				int counter = 0;
+				
 				//need to write byte[] to outputstream
 				try {
-					OutputStream outputStream = new BufferedOutputStream(socket.getOutputStream(), 2048);
-					System.out.println("writing to outStream");
 					
 					
-					int offset = 0;
+					while(counter < contentLength) {
 					
-					while(offset + 2048 <= fileBytes.length){
-						outputStream.write(fileBytes, offset, 2048);
-						offset += 2048;
+						System.out.println("writing to outStream");
+						counter += fileInputStream.read(buffer);
+						byteOutputStream.write(buffer);
+						//byteOutputStream.flush();
+						System.out.println(counter);
 					}
-					System.out.println("offset before and after last write");
-					System.out.println(offset);
 					
-					outputStream.write(fileBytes, offset, fileBytes.length - offset);
-					outputStream.flush();
-					
-					offset += fileBytes.length - offset;
-					System.out.println(offset);
+					fileInputStream.close();
 					
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -175,13 +180,19 @@ public class ServerResponseThread implements Runnable {
 			
 		}
 		
+		try {
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		scan.close();
 		
 		
 		
 	}
 	
-	
+	/**
 	public byte[] getFileByteList(File f) throws FileNotFoundException, IOException{
 		
 
@@ -211,6 +222,7 @@ public class ServerResponseThread implements Runnable {
 		
 		return fileByteList;
 	}
+	**/
 	
 	
 	public boolean checkValidGet(String getLine){

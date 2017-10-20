@@ -61,7 +61,7 @@ public class WebServer extends Thread {
 				}
 				
 				catch(SocketTimeoutException e){
-					System.out.println("checked shutdown");
+					//System.out.println("checked shutdown");
 					if(shutDown)
 						break;
 					
